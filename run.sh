@@ -40,8 +40,7 @@ check_cluster()
 
 genload()
 {
-    local -i genload_id=0
-    for rpc_flood_id in $(seq 1 $(nproc))
+    for rpc_flood_id in $(seq 1 "$(nproc)")
     do
         echo "[INFO] starting rpc_flood id $rpc_flood_id"
         "$PWD/rpc_flood" &
@@ -54,6 +53,26 @@ genload()
         "$PWD/rpc_flood_client" &
         echo "$!" >> "$rpc_flood_client_pid_file"
     done
+}
+
+kill_processes()
+{
+    local pid_file="$1"
+    while IFS= read -r pid
+    do
+        echo "[INFO] stopping process $pid"
+        kill -9 "$pid"
+    done < "$pid_file"
+}
+
+stop_genload()
+{
+    kill_processes "$rpc_flood_pid_file"
+}
+
+stop_genload_client()
+{
+    kill_processes "$rpc_flood_client_pid_file"
 }
 
 # enable drop_unroutable_metric feature
@@ -85,3 +104,5 @@ sleep 10
 stop_genload
 
 check_cluster
+
+stop_genload_clients

@@ -2,7 +2,6 @@
 
 set -o errexit
 set -o nounset
-set -x
 
 PATH="$HOME/development/rabbitmq/umbrella/deps/rabbitmq_server_release/sbin:$PATH"
 
@@ -22,6 +21,7 @@ source "$PWD/venv/bin/activate"
 
 setup_cluster()
 {
+    set +o errexit
     # enable drop_unroutable_metric feature
     rabbitmqctl -n "$n1" enable_feature_flag drop_unroutable_metric
 
@@ -37,6 +37,7 @@ setup_cluster()
 
     # setup policy
     rabbitmqctl -n "$n1" set_policy ha '^(?!amq\.).*' '{"ha-mode":"all", "ha-sync-mode": "automatic"}' --priority 10 --apply-to queues
+    set -o errexit
 }
 
 check_cluster()
@@ -84,8 +85,8 @@ kill_processes()
     local pid_file="$1"
     while IFS= read -r pid
     do
-        echo "[INFO] stopping process $pid"
-        kill -9 "$pid"
+        # echo "[INFO] stopping process $pid"
+        kill -9 "$pid" 2> /dev/null
     done < "$pid_file"
     set -o errexit
 }
@@ -106,10 +107,10 @@ check_cluster
 
 genload
 
-sleep 60
+# sleep 60
+# rabbitmqctl -n "$n2" shutdown
 
-rabbitmqctl -n "$n2" shutdown
-
+echo '[INFO] sleeping 10 seconds'
 sleep 10
 
 stop_genload

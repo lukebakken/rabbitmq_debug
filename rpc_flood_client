@@ -17,10 +17,8 @@ all_endpoints = [node1, node2, node3]
 def recv_callback(ch, method, properties, body):
     #print ("Got Request:" + body)
     request = json.loads(body)
-
     channel.queue_delete(reply_name)
     channel.exchange_delete(reply_name)
-    
     #json_string = json.dumps(data)
     #channel.basic_publish(exchange=rabbitmq_exchange,
     #             routing_key=reply_fqdn,

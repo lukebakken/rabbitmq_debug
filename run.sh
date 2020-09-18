@@ -13,7 +13,7 @@ declare -r n3="rabbit-3@$hostname"
 declare -r rpc_flood_pid_file="$(mktemp)"
 declare -r rpc_flood_client_pid_file="$(mktemp)"
 
-trap "{ rm -f $rpc_flood_pid_file $rpc_flood_client_pid_file }" EXIT
+trap "{ rm -f $rpc_flood_pid_file $rpc_flood_client_pid_file; }" EXIT
 
 # set up cluster in advance
 
@@ -40,29 +40,35 @@ check_cluster()
 
 genload()
 {
+    set +o errexit
+    rm -f "$PWD"/output/*.txt
+    set -o errexit
+
     for rpc_flood_id in $(seq 1 "$(nproc)")
     do
         echo "[INFO] starting rpc_flood id $rpc_flood_id"
-        "$PWD/rpc_flood" &
+        "$PWD/rpc_flood" > "$PWD/output/rpc_flood-$rpc_flood_id-out.txt" 2>&1 &
         echo "$!" >> "$rpc_flood_pid_file"
     done
 
     for rpc_flood_client_id in $(seq 1 75)
     do
         echo "[INFO] starting rpc_flood_client id $rpc_flood_client_id"
-        "$PWD/rpc_flood_client" &
+        "$PWD/rpc_flood_client" > "$PWD/output/rpc_flood_client-$rpc_flood_client_id-out.txt" 2>&1 &
         echo "$!" >> "$rpc_flood_client_pid_file"
     done
 }
 
 kill_processes()
 {
+    set +o errexit
     local pid_file="$1"
     while IFS= read -r pid
     do
         echo "[INFO] stopping process $pid"
         kill -9 "$pid"
     done < "$pid_file"
+    set -o errexit
 }
 
 stop_genload()
@@ -70,7 +76,7 @@ stop_genload()
     kill_processes "$rpc_flood_pid_file"
 }
 
-stop_genload_client()
+stop_genload_clients()
 {
     kill_processes "$rpc_flood_client_pid_file"
 }

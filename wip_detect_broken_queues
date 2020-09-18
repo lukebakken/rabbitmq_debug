@@ -7,7 +7,7 @@ import pprint
 import pika
 import sys
 
-url = 'http://node1:15672/api/queues'
+url = 'http://localhost:15672/api/queues'
 response = requests.get(url, auth=HTTPBasicAuth('admin', 'administrator'))
 workdata = {}
 if(response.ok):

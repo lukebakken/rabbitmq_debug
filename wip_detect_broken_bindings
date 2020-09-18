@@ -8,7 +8,7 @@ import pprint
 import sys
 from urllib.parse import quote
 
-host = "node1"
+host = "localhost"
 url = 'http://' + host + ':15672/api/bindings'
 basic_auth = HTTPBasicAuth('admin', 'administrator')
 response = requests.get(url, auth=basic_auth)

@@ -1,5 +1,5 @@
 [check_unroutable]
-base = http://node1:15672
+base = http://localhost:15672
 vhost = /
 username = admin
 password = administrator

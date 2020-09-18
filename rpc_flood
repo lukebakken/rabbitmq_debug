@@ -4,9 +4,9 @@ import pika
 import random
 
 rabbitmq_exchange = "rpc_flood"
-node1 = pika.URLParameters('amqp://user:password@node1/')
-node2 = pika.URLParameters('amqp://user:password@node2/')
-node3 = pika.URLParameters('amqp://user:password@node3/')
+node1 = pika.URLParameters('amqp://user:password@localhost:5672/')
+node2 = pika.URLParameters('amqp://user:password@localhost:5673/')
+node3 = pika.URLParameters('amqp://user:password@localhost:5674/')
 all_endpoints = [node1, node2, node3]
 
 #

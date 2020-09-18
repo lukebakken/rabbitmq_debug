@@ -20,9 +20,7 @@ def recv_callback(ch, method, properties, body):
         reply_key = request['routing_key']
         data = { 'msg': 'have a nice day' }
         json_string = json.dumps(data)
-        channel.basic_publish(exchange=reply_key,
-                  routing_key=reply_key,
-                  body=json_string)
+        channel.basic_publish(exchange=reply_key, routing_key=reply_key, body=json_string)
         print(" [x] Sent " + json_string + " to exchange " + reply_key)
     except Exception as e:
         print("ERR - %s" % e)
@@ -34,8 +32,8 @@ while True:
         connection = pika.BlockingConnection(all_endpoints[0])
 
         channel = connection.channel()
-        channel.exchange_declare(exchange=rabbitmq_exchange, exchange_type='topic')
-        result = channel.queue_declare(rabbitmq_exchange + '_control')
+        channel.exchange_declare(exchange=rabbitmq_exchange, exchange_type='topic', durable=True)
+        result = channel.queue_declare(rabbitmq_exchange + '_control', durable=True)
         queue_name = result.method.queue
         print(queue_name)
         channel.queue_bind(exchange=rabbitmq_exchange, queue=queue_name, routing_key='control')

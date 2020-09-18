@@ -43,10 +43,10 @@ while True:
 
             reply_name = 'rpc_flood_reply_' + str(reply_uuid)
             # declare exchange
-            channel.exchange_declare(exchange=reply_name, exchange_type='direct', auto_delete=True)
+            channel.exchange_declare(exchange=reply_name, exchange_type='direct', auto_delete=True, durable=True)
 
             # declare queue
-            result = channel.queue_declare(reply_name)
+            result = channel.queue_declare(reply_name, durable=True)
 
             # bind routing-key <-> queue (use queue_name as routing_key)
             channel.queue_bind(exchange=reply_name, queue=reply_name, routing_key=reply_name)

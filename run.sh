@@ -20,6 +20,25 @@ trap "{ rm -f $rpc_flood_pid_file $rpc_flood_client_pid_file; }" EXIT
 # python3 -m pip install requests pika
 source "$PWD/venv/bin/activate"
 
+setup_cluster()
+{
+    # enable drop_unroutable_metric feature
+    rabbitmqctl -n "$n1" enable_feature_flag drop_unroutable_metric
+
+    # setup admin
+    rabbitmqctl -n "$n1" add_user admin administrator
+    rabbitmqctl -n "$n1" set_user_tags admin administrator
+    rabbitmqctl -n "$n1" set_permissions --vhost / admin '.*' '.*' '.*'
+
+    # setup user
+    rabbitmqctl -n "$n1" add_user user password
+    rabbitmqctl -n "$n1" set_user_tags user administrator
+    rabbitmqctl -n "$n1" set_permissions --vhost / user '.*' '.*' '.*'
+
+    # setup policy
+    rabbitmqctl -n "$n1" set_policy ha '^(?!amq\.).*' '{"ha-mode":"all", "ha-sync-mode": "automatic"}' --priority 10 --apply-to queues
+}
+
 check_cluster()
 {
     echo
@@ -81,21 +100,7 @@ stop_genload_clients()
     kill_processes "$rpc_flood_client_pid_file"
 }
 
-# enable drop_unroutable_metric feature
-rabbitmqctl -n "$n1" enable_feature_flag drop_unroutable_metric
-
-# setup admin
-rabbitmqctl -n "$n1" add_user admin administrator
-rabbitmqctl -n "$n1" set_user_tags admin administrator
-rabbitmqctl -n "$n1" set_permissions --vhost / admin '.*' '.*' '.*'
-
-# setup user
-rabbitmqctl -n "$n1" add_user user password
-rabbitmqctl -n "$n1" set_user_tags user administrator
-rabbitmqctl -n "$n1" set_permissions --vhost / user '.*' '.*' '.*'
-
-# setup policy
-rabbitmqctl -n "$n1" set_policy ha '^(?!amq\.).*' '{"ha-mode":"all", "ha-sync-mode": "automatic"}' --priority 10 --apply-to all
+setup_cluster
 
 check_cluster
 

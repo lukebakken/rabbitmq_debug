@@ -107,7 +107,8 @@ check_cluster
 
 genload
 
-# sleep 60
+echo '[INFO] sleeping 60 seconds'
+sleep 60
 # rabbitmqctl -n "$n2" shutdown
 
 echo '[INFO] sleeping 10 seconds'

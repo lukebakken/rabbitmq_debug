@@ -30,56 +30,13 @@ basic_auth = HTTPBasicAuth(username, password)
 ret_code = 0
 json_data_file = str(Path.home()) + "/.check_rabbitmq_unroutable_msg.json"
 
-unroutable_queue = "unroutable"
-dropmsg_queue = "dropmsg"
-dropmsg_data = [
-{'exchange': 'q-agent-notifier-security_group-update_fanout'},
-{'exchange': 'q-agent-notifier-port-update_fanout'},
-{'exchange': 'q-agent-notifier-port-delete_fanout'},
-{'exchange': 'q-agent-notifier-network-delete_fanout'},
-]
-
-#
-# Go..
-#
+unroutable_messages_queue = "unroutable_messages"
 
 try:
     with open(json_data_file, "r") as fp:
         drop_unroutable = json.load(fp)
 except FileNotFoundError:
     drop_unroutable = {}
-
-#
-# create dropmsg_queue
-path = "/api/queues/" + quote(vhost, safe='') + "/" + dropmsg_queue
-response = requests.put(base+path, auth=basic_auth, data='{"auto_delete":false,"durable":false,"arguments":{"x-message-ttl": 10000}}')
-logging.debug(response.text)
-response.raise_for_status()
-
-#
-# create bindings from exchanges to dropmsg_queue
-for dropmsg in dropmsg_data:
-    # fix bindings
-    path = "/api/exchanges/" + quote(vhost, safe='') + "/" + dropmsg['exchange']
-    logging.debug("Req %s" % path)
-    try:
-        response = requests.get(base+path, auth=basic_auth)
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        if response.status_code != 404:
-            logging.error(response.text)
-            raise(e)
-
-    logging.debug("Got %s" % response.text)
-    if response.status_code == 404:
-        continue
-
-    path = "/api/bindings/" + quote(vhost, safe='') + "/e/" + dropmsg['exchange'] + "/q/" + dropmsg_queue
-    logging.debug("POST-Req %s" % path)
-    response = requests.post(base+path, auth=basic_auth)
-    response.raise_for_status()
-    logging.debug(response.text)
-    logging.debug("OK")
 
 #
 # check if unroutable_counter increases
@@ -90,7 +47,7 @@ response.raise_for_status()
 logging.debug("OK")
 new_drop_unroutable = {}
 
-if(response.ok):
+if response.ok:
     data = response.json()
     for entry in data:
         if 'message_stats' in entry:
@@ -107,15 +64,8 @@ with open(json_data_file, "w") as fp:
     json.dump(new_drop_unroutable, fp)
 
 #
-# create unroutable_queue
-path = "/api/queues/" + quote(vhost, safe='') + "/" + unroutable_queue
-response = requests.put(base+path, auth=basic_auth, data='{"auto_delete":false,"durable":false,"arguments":{"x-message-ttl": 300000}}')
-logging.debug(response.text)
-response.raise_for_status()
-
-#
-# get msg from unroutable queue
-path = "/api/queues/" + quote(vhost, safe='') + "/" + unroutable_queue + "/get"
+# get msg from unroutable_messages
+path = "/api/queues/" + quote(vhost, safe='') + "/" + unroutable_messages_queue + "/get"
 logging.debug("Req %s" % path)
 try:
     response = requests.post(base+path, auth=basic_auth, data='{"count": 1000, "ackmode": "ack_requeue_false", "encoding": "auto"}')

@@ -10,12 +10,10 @@ import sys
 url = 'http://localhost:15672/api/queues'
 response = requests.get(url, auth=HTTPBasicAuth('admin', 'administrator'))
 workdata = {}
-if(response.ok):
-        data = response.json()
-        for entry in data:
-                if 'messages_ram' not in entry:
-                        print(entry['name'])
+if response.ok:
+    data = response.json()
+    for entry in data:
+        if 'messages_ram' not in entry:
+            print(entry['name'])
 else:
-        print(response.content)
-
-
+    print(response.content)

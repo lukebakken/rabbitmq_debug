@@ -96,7 +96,7 @@ kill_processes()
     while IFS= read -r pid
     do
         # echo "[INFO] stopping process $pid"
-        kill -9 "$pid" 2> /dev/null
+        kill -TERM "$pid" 2> /dev/null
     done < "$pid_file"
     set -o errexit
 }

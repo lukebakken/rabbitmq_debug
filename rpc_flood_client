@@ -3,6 +3,8 @@ import json
 import uuid
 import pika
 import random
+import signal
+import sys
 
 # RabbitMQ
 node1 = pika.URLParameters('amqp://user:password@localhost:5672/')
@@ -14,16 +16,30 @@ all_endpoints = [node1, node2, node3]
 # MAIN
 #
 
+global kill_now = False
+global connection = None
+
+def exit_gracefully(signum, frame):
+    kill_now = True
+
+signal.signal(signal.SIGINT, exit_gracefully)
+signal.signal(signal.SIGTERM, exit_gracefully)
+
 def recv_callback(ch, method, properties, body):
-    #print ("Got Request:" + body)
-    request = json.loads(body)
-    channel.queue_delete(reply_name)
-    channel.exchange_delete(reply_name)
-    #json_string = json.dumps(data)
-    #channel.basic_publish(exchange=rabbitmq_exchange,
-    #             routing_key=reply_fqdn,
-    #             body=json_string)
-    #print(" [x] Sent " + json_string + " to " + reply_fqdn)
+    if kill_now:
+        channel.stop_consuming()
+        ch.close()
+        connection.close()
+    else:
+        #print ("Got Request:" + body)
+        request = json.loads(body)
+        channel.queue_delete(reply_name)
+        channel.exchange_delete(reply_name)
+        #json_string = json.dumps(data)
+        #channel.basic_publish(exchange=rabbitmq_exchange,
+        #             routing_key=reply_fqdn,
+        #             body=json_string)
+        #print(" [x] Sent " + json_string + " to " + reply_fqdn)
 
 
 while True:
@@ -36,6 +52,11 @@ while True:
         rabbitmq_exchange = 'rpc_flood'
 
         while True:
+
+            if kill_now:
+                channel.close();
+                connection.close();
+                sys.exit(0)
 
             reply_uuid = uuid.uuid4()
 

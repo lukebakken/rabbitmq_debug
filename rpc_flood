@@ -2,6 +2,8 @@
 import json
 import pika
 import random
+import signal
+import sys
 
 rabbitmq_exchange = "rpc_flood"
 node1 = pika.URLParameters('amqp://user:password@localhost:5672/')
@@ -12,6 +14,9 @@ all_endpoints = [node1, node2, node3]
 #
 # MAIN
 #
+
+global kill_now = False
+global connection = None
 
 def recv_callback(ch, method, properties, body):
     print ("Got Request:" + str(body))
@@ -30,8 +35,13 @@ while True:
         random.shuffle(all_endpoints)
         # RabbitMQ Connection
         connection = pika.BlockingConnection(all_endpoints[0])
-
         channel = connection.channel()
+
+        if kill_now:
+            channel.close();
+            connection.close();
+            sys.exit(0)
+
         channel.exchange_declare(exchange=rabbitmq_exchange, exchange_type='topic', durable=True)
         result = channel.queue_declare(rabbitmq_exchange + '_control', durable=True)
         queue_name = result.method.queue

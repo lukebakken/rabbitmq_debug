@@ -10,8 +10,12 @@ declare -ri port=15672
 declare -r n1="rabbit-1@$hostname"
 declare -r n2="rabbit-2@$hostname"
 declare -r n3="rabbit-3@$hostname"
+
 declare -r rpc_flood_pid_file="$(mktemp)"
 declare -r rpc_flood_client_pid_file="$(mktemp)"
+
+declare -ri sleep_one=60
+declare -ri sleep_two=10
 
 declare -r ex_unroutable='unroutable'
 declare -r q_unroutable_messages='unroutable_messages'
@@ -58,14 +62,14 @@ check_cluster()
     "$PWD/check_rabbitmq_unroutable_msg" "$PWD/config.ini.default"
 
     echo
-    echo "# wip_detect_broken_bindings"
+    echo "# detect_broken_bindings"
     echo "############################"
-    "$PWD/wip_detect_broken_bindings"
+    "$PWD/detect_broken_bindings"
 
     echo
-    echo "# wip_detect_broken_queues"
+    echo "# detect_broken_queues"
     echo "##########################"
-    "$PWD/wip_detect_broken_queues"
+    "$PWD/detect_broken_queues"
 }
 
 genload()
@@ -111,19 +115,24 @@ stop_genload_clients()
     kill_processes "$rpc_flood_client_pid_file"
 }
 
+do_sleep()
+{
+    local -ri s="$1"
+    echo "[INFO] sleeping $s seconds"
+    sleep "$s"
+}
+
 setup_cluster
 
 check_cluster
 
 genload
 
-echo '[INFO] sleeping 60 seconds'
-sleep 60
+do_sleep "$sleep_one"
 
-# rabbitmqctl -n "$n2" shutdown
+rabbitmqctl -n "$n2" shutdown
 
-echo '[INFO] sleeping 10 seconds'
-sleep 10
+do_sleep "$sleep_two"
 
 stop_genload
 

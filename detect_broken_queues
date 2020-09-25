@@ -3,9 +3,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
 import json
-import pprint
-import pika
-import sys
 
 url = 'http://localhost:15672/api/queues'
 response = requests.get(url, auth=HTTPBasicAuth('admin', 'administrator'))
@@ -16,4 +13,5 @@ if response.ok:
         if 'messages_ram' not in entry:
             print(entry['name'])
 else:
+    print('ERROR:')
     print(response.content)

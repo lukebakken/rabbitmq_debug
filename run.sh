@@ -13,6 +13,7 @@ declare -r n3="rabbit-3@$hostname"
 
 declare -r rpc_flood_pid_file="$(mktemp)"
 declare -r rpc_flood_client_pid_file="$(mktemp)"
+declare -ri rpc_flood_client_count='128'
 
 declare -ri sleep_one=60
 declare -ri sleep_two=10
@@ -56,6 +57,7 @@ setup_cluster()
 
 check_cluster()
 {
+    set +o errexit
     echo
     echo "# check_rabbitmq_unroutable_msg"
     echo "###############################"
@@ -70,6 +72,7 @@ check_cluster()
     echo "# detect_broken_queues"
     echo "##########################"
     "$PWD/detect_broken_queues"
+    set -o errexit
 }
 
 genload()
@@ -85,7 +88,7 @@ genload()
         echo "$!" >> "$rpc_flood_pid_file"
     done
 
-    for rpc_flood_client_id in $(seq 1 75)
+    for rpc_flood_client_id in $(seq 1 "$rpc_flood_client_count")
     do
         echo "[INFO] starting rpc_flood_client id $rpc_flood_client_id"
         "$PWD/rpc_flood_client" > "$PWD/output/rpc_flood_client-$rpc_flood_client_id-out.txt" 2>&1 &

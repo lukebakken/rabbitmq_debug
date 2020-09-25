@@ -17,35 +17,35 @@ vhost = "/"
 broken = []
 
 print("# Checking.. may take a while..", flush=True)
-if(response.ok):
-        data = response.json()
-        for entry in data:
-            exchange = entry['source']
-            routing_key = entry['routing_key']
-            destination = entry['destination']
-            if exchange == '':
-                continue
+if response.ok:
+    data = response.json()
+    for entry in data:
+        exchange = entry['source']
+        routing_key = entry['routing_key']
+        destination = entry['destination']
+        if exchange == '':
+            continue
 
-            if re.match('^amq.gen', destination):
-                continue
+        if re.match('^amq.gen', destination):
+            continue
 
-            url = 'http://' + host + ':15672/api/exchanges/' + quote(vhost, safe='') + '/' + exchange + '/publish'
-            data = '{"vhost":"' + vhost + '","name":"' + exchange + '","properties":{"delivery_mode":2,"headers":{}},"routing_key":"' + routing_key + '","delivery_mode":"2","payload":"test","headers":{},"props":{},"payload_encoding":"string"}'
-            r = response = requests.post(url, auth=basic_auth, data=data)
-            try:
-                r.raise_for_status()
-                data = r.json()
-                if data['routed'] == False:
-                    broken.append(destination)
-            except requests.exceptions.HTTPError as e:
-                continue
+        url = 'http://' + host + ':15672/api/exchanges/' + quote(vhost, safe='') + '/' + exchange + '/publish'
+        data = '{"vhost":"' + vhost + '","name":"' + exchange + '","properties":{"delivery_mode":2,"headers":{}},"routing_key":"' + routing_key + '","delivery_mode":"2","payload":"test","headers":{},"props":{},"payload_encoding":"string"}'
+        r = response = requests.post(url, auth=basic_auth, data=data)
+        try:
+            r.raise_for_status()
+            data = r.json()
+            if data['routed'] == False:
+                broken.append(destination)
+        except requests.exceptions.HTTPError as e:
+            continue
 
 else:
-        print(response.content)
+    print('ERROR:')
+    print(response.content)
 
 for entry in broken:
     print("# broken bindings - just delete these queues", flush=True)
     print("rabbitmqctl delete_queue %s " % entry)
 
 print("# DONE")
-

@@ -15,20 +15,26 @@ all_endpoints = [node1, node2, node3]
 # MAIN
 #
 
-global kill_now = False
-global connection = None
+kill_now = False
+connection = None
 
 def recv_callback(ch, method, properties, body):
-    print ("Got Request:" + str(body))
-    try: 
-        request = json.loads(body)
-        reply_key = request['routing_key']
-        data = { 'msg': 'have a nice day' }
-        json_string = json.dumps(data)
-        channel.basic_publish(exchange=reply_key, routing_key=reply_key, body=json_string)
-        print(" [x] Sent " + json_string + " to exchange " + reply_key)
-    except Exception as e:
-        print("ERR - %s" % e)
+    if kill_now:
+        ch.stop_consuming();
+        ch.close();
+        connection.close();
+        sys.exit(0)
+    else:
+        print("Got Request:" + str(body))
+        try:
+            request = json.loads(body)
+            reply_key = request['routing_key']
+            data = { 'msg': 'have a nice day' }
+            json_string = json.dumps(data)
+            channel.basic_publish(exchange=reply_key, routing_key=reply_key, body=json_string)
+            print(" [x] Sent " + json_string + " to exchange " + reply_key)
+        except Exception as e:
+            print("ERR - %s" % e)
 
 while True:
     try:
@@ -42,8 +48,8 @@ while True:
             connection.close();
             sys.exit(0)
 
-        channel.exchange_declare(exchange=rabbitmq_exchange, exchange_type='topic', durable=True)
-        result = channel.queue_declare(rabbitmq_exchange + '_control', durable=True)
+        channel.exchange_declare(exchange=rabbitmq_exchange, exchange_type='topic', durable=True, auto_delete=False)
+        result = channel.queue_declare(rabbitmq_exchange + '_control', durable=True, auto_delete=False)
         queue_name = result.method.queue
         print(queue_name)
         channel.queue_bind(exchange=rabbitmq_exchange, queue=queue_name, routing_key='control')
@@ -66,7 +72,7 @@ while True:
         break
     # Recover on all other connection errors
     except pika.exceptions.AMQPConnectionError:
-        print("Connection was closed, retrying...")
+        secs = random.randint(1,5)
+        print("Connection was closed, retrying in {} seconds...".format(secs))
+        time.sleep(secs)
         continue
-
-

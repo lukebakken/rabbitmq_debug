@@ -33,11 +33,14 @@ def recv_callback(ch, method, properties, body):
         connection.close()
         sys.exit(0)
     else:
-        #print ("Got Request:" + body)
-        request = json.loads(body)
+        if body:
+            data = json.loads(body)
+            jstr = json.dumps(data)
+            print("Got Request:" + jstr)
+        else:
+            print("NO BODY!")
         channel.queue_delete(reply_name)
         channel.exchange_delete(reply_name)
-        #json_string = json.dumps(data)
         #channel.basic_publish(exchange=rabbitmq_exchange,
         #             routing_key=reply_fqdn,
         #             body=json_string)
